@@ -1,90 +1,18 @@
-# Food Business — Factory Operations Demo
+# Food Business — Factory Operations
 
-A separate full-stack showcase with a public source repository and private live workspace of paperless food-manufacturing workflows. This project is independent of the owner's portfolio.
+A paperless food manufacturing **demo** with department usernames/passwords, shared online records, inventory, quality approvals and batch traceability. This repository is separate from the owner's portfolio.
 
-## What is implemented
+## Finish hosting
 
-- Private platform sign-in followed by nine username/password demo department accounts: Administrator, Receiving, Warehouse, Planning, Production, QC, Laboratory, Dispatch and Management.
-- 18 digital form types mapped to pages 2–19 of `CCF_000653.pdf`, plus Production Order and Material Issue forms.
-- Draft entry, repeated samples/observations, submission, review, return, rejection, approval, locked posted transactions, correction copies for non-stock forms and record history.
-- Server-side permission checks for the selected demo profile.
-- Lot inventory with receipt, issue, FG receipt and dispatch movements.
-- Production batch inputs, rework links, release prerequisites, holds and customer-level traceability.
-- PDF/JPG/PNG attachments in R2, downloadable CSV registers and printable records/traces.
-- Master data for materials, products, suppliers, customers, equipment, locations and recipe references.
-- Persistent owner-specific D1 workspace, optimistic concurrency checks and an activity trail.
-- Responsive layout for desktop, tablet and mobile.
+The application is prepared for **GitHub Pages + Supabase Free**. No ChatGPT account or sign-in is needed by app users.
 
-All preloaded values are **synthetic demonstration data**. The paper's handwritten historical values and signatures have not been treated as verified digital records. The source PDF is not included in this repository.
+**Follow [the setup guide](docs/SUPABASE_SETUP.md):** run the SQL setup in Supabase, deploy the single-file `factory-api` Edge Function, then enable GitHub Pages on `main` → `/docs`.
 
-## Try the live demo
+The production frontend is already included in `docs`. The expected website is `https://jahidhrk.github.io/food-business-factory-operations/`; publication must be enabled in the repository's Pages settings first.
 
-Open [the live demo](https://food-business-workflow-demo.jahid-has.chatgpt.site). Complete the private hosting sign-in, then use **admin.demo** / **Demo123!** and follow **Demo guide**.
+## Demo accounts
 
-1. Review and approve `DEMO-RECEIVING`; a 120 kg material lot appears in inventory.
-2. Open the Planning draft and approve a new production batch.
-3. Issue released materials from Warehouse against the batch.
-4. Fill and approve its production, QC and laboratory forms.
-5. Approve the packing transfer, receive finished goods, and dispatch to a demo customer.
-6. Trace `FG-DEMO-001` to inspect the preloaded complete example.
-7. Sign out and log in with another demo account to exercise each department's allowed actions.
-
-## Authentication boundary
-
-This is an owner-private **showcase**. Hosted authentication is provided by Sites. The signed-in owner can log in with the published department demo IDs and shared demo password. These showcase accounts simulate role permissions and are not production employee identities or signed electronic approvals. The API obtains the signed-in identity from the platform and isolates each owner's data by its stable user ID. Missing identity is rejected. For a real factory, replace demo profile selection with administered employee membership and validated approval separation.
-
-## Development
-
-Clone this repository:
-
-```sh
-git clone https://github.com/jahidhrk/food-business-factory-operations.git
-cd food-business-factory-operations
-```
-
-
-Requirements: Node.js 22.13 or newer and Git. The checked-in pnpm lockfile is authoritative.
-
-```sh
-corepack enable
-pnpm install --frozen-lockfile
-pnpm test
-pnpm typecheck
-pnpm build
-```
-
-For a normal laptop, the starter selects its portable execution profile. Run `pnpm dev` for local development. See `docs/SETUP.md` for D1 migrations and preview details. The hosted implementation targets a Cloudflare Worker with D1 (`DB`) and R2 (`BUCKET`). It is not a GitHub Pages static application.
-
-## Project structure
-
-| Path | Purpose |
-| --- | --- |
-| `lib/catalog.ts` | Source-mapped form definitions, field types and department assignments |
-| `lib/engine.ts` | Workflow validation, state transitions, inventory and traceability |
-| `app/workspace.tsx` | Application screens and form editor |
-| `app/api/operations/route.ts` | Authenticated persistent workspace API |
-| `app/api/attachments/route.ts` | Authenticated R2 file handling |
-| `db/schema.ts`, `drizzle/` | D1 schema and migrations |
-| `tests/` | Permission, stock, traceability and API persistence checks |
-| `docs/` | Form coverage, setup, architecture and rollout notes |
-
-## Operating limits
-
-- Business records are stored as one versioned JSON workspace per owner for the demo. This deliberately simple storage model is not a high-volume factory database design. Production needs normalized records, indexed ledgers, operational backups and tested disaster recovery.
-- Inventory units are explicit. Material issues must use the source lot's unit; no automatic conversions are assumed.
-- Recorded QC pass/fail decisions control release. Numerical HACCP thresholds, test methods, sampling frequency, CCP corrections and exception policies must be reviewed and configured by the factory team. The app does not certify food safety or compliance.
-- The configured release checklist is for the demonstration sausage process. Other product routings and recipe versions require configuration.
-- Notes from source retention periods are displayed. No automatic deletion is scheduled.
-- ERP integrations, sensor collection, physical label printing, offline synchronization and independent staff credential management are outside this demo implementation.
-- CSV exports protect spreadsheet formula-leading text. Attachments are scoped to the signed-in owner's workspace.
-
-## Verification
-
-Run `pnpm test` and `pnpm typecheck`. The deployment build must pass before publication. Browser layout verification depends on supported preview tooling; see the handoff for verification status.
-
-## Department demo login
-
-After the private hosting sign-in, log in with a department user ID. All demo accounts use **Demo123!**.
+Password for every department: **`Demo123!`**.
 
 | Department | User ID |
 | --- | --- |
@@ -98,4 +26,64 @@ After the private hosting sign-in, log in with a department user ID. All demo ac
 | Dispatch | `dispatch.demo` |
 | Management | `management.demo` |
 
-Credentials are validated by the server to select the department role. Sign out before trying another account. Shared demo credentials are deliberately visible; they are not production employee credentials. Records remain scoped to the hosting identity.
+These are deliberately public showcase credentials. All departments share one factory workspace. Server-issued sessions last eight hours and are revoked on sign-out. Roles are derived on the server from the logged-in account; management is read-only.
+
+## What is included
+
+- 18 source-mapped paper form types plus Production Order and Material Issue, with 502 form field definitions.
+- Receiving, warehouse, planning, production, quality, laboratory, finished-goods and dispatch workflows.
+- Drafts, repeated rows, submission, approval, return, rejection, correction copies and record history.
+- Stock receipts, issues, finished-goods receipt and customer dispatch with quantity and expiry checks.
+- Production batch inputs, rework genealogy, QC holds and release prerequisites.
+- PDF/JPG/PNG attachments, CSV exports, printing, master data and an audit trail.
+- Supabase database persistence and version checks that prevent concurrent saves overwriting one another.
+- Responsive interface and login directly from the website.
+
+Historical handwritten values and signatures have not been imported as verified records. All sample values are synthetic. The original source PDF is not in this public repository. Retention notes are documented without automatic deletion.
+
+## Local development
+
+Node.js 22.13+ and Corepack are required. Use the committed pnpm lockfile.
+
+```sh
+git clone https://github.com/jahidhrk/food-business-factory-operations.git
+cd food-business-factory-operations
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+The configured Supabase backend must be deployed for online operations. Its publishable URL/key are in `web/config.ts`; server credentials never enter the frontend. Local development is allowed on localhost/127.0.0.1 port 5173.
+
+```sh
+pnpm test
+pnpm typecheck
+pnpm build
+pnpm build:backend
+```
+
+`pnpm build` outputs `pages-dist`. To update branch-hosted Pages, copy that output to `docs`, preserve the Markdown guides, and commit. `pnpm build:backend` regenerates the single-file dashboard deployment from the source engine and handler.
+
+## Source map
+
+| File | Purpose |
+| --- | --- |
+| `app/workspace.tsx` | Department UI, forms and reports |
+| `web/main.tsx` | Static React entry |
+| `web/client.ts` | Supabase function transport and session handling |
+| `web/config.ts` | Public project configuration |
+| `lib/catalog.ts` | Form definitions and department assignments |
+| `lib/engine.ts` | Server workflow and inventory validation |
+| `supabase/setup.sql` | Database tables, grants and private attachment bucket |
+| `supabase/handler.ts` | Server session, workflow and attachment endpoints |
+| `supabase/functions/factory-api/index.ts` | Generated single-file function to deploy |
+| `docs/FORM_COVERAGE.md` | Complete source-to-field mapping |
+| `docs/SUPABASE_SETUP.md` | Dashboard setup and verification instructions |
+
+The older Sites/Vinext server routes remain as an implementation reference; they are not used by the GitHub Pages build. `dev:sites`, `build:sites` and `start:sites` are legacy development commands.
+
+## Verification and limits
+
+37 automated tests cover workflows, role validation, session expiry/revocation, shared saves, optimistic concurrency and attachments. The frontend build and TypeScript checks pass locally. Live database and browser verification still require the owner to finish the dashboard deployment steps.
+
+This is a showcase, not a validated factory production system. Shared published passwords and role-based demo actors are not independent employee identities or legally signed approvals. Free hosting quotas apply; Supabase may pause inactive free projects.

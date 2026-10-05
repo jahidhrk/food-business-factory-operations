@@ -1,0 +1,4 @@
+project_id = "food-business-factory-operations"
+[functions.factory-api]
+# This demo validates opaque sessions itself, before every data operation.
+verify_jwt = false

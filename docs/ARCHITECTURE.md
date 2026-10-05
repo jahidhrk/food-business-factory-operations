@@ -1,36 +1,31 @@
-# Application architecture
+# Architecture
+
+The GitHub Pages build is a React application with a repository-specific URL base. The UI calls the Supabase `factory-api` Edge Function, which handles all operational reads, writes and attachments. No Sites or ChatGPT identity is used by this deployment.
 
 ## Request flow
 
-1. Sites authenticates the visitor and injects identity headers.
-2. The server-only authentication helper obtains a stable user ID.
-3. The operations route loads that owner's D1 workspace.
-4. The workflow engine validates the selected demo role and requested action.
-5. The engine applies a change to a cloned state. Failed operations do not mutate the input.
-6. The route updates the workspace only if its version still matches. Conflicts return HTTP 409.
-7. The client uses the returned persisted state and version.
+1. Browser submits a department demo ID/password to the login endpoint.
+2. Backend validates the account and creates a 256-bit random session token.
+3. Only its SHA-256 hash and department are stored in `factory_sessions`; the raw token goes to the browser and is retained in local storage for that device.
+4. Every operational request validates that token hash and eight-hour expiry.
+5. The backend sets the workflow role from the session before executing the shared engine; incoming commands cannot select a different role.
+6. The shared JSON workspace is persisted with an atomic version-matched update. A simultaneous stale update returns 409.
+7. Attachments are saved in a private bucket and read only through a validated backend session. Failed concurrent uploads remove the newly stored object.
 
-## Data entities
+## Data model and access
 
-- Record: typed form data, status, production batch, revision, attachments and history.
-- Lot: material/product, supplier, manufacturing/expiry dates, quantity, unit, location, source and disposition.
-- Batch: product, planned quantity, schedule, raw inputs, rework parents and release status.
-- Movement: signed inventory quantity tied to its source record, batch and customer.
-- Audit: selected demo actor, timestamp, action and note.
-- Master: materials, products, suppliers, customers, equipment, locations and recipe references.
+`factory_workspace` contains one shared demonstration plant, version and timestamp. `factory_sessions` contains session hashes, constrained departments and indexed expiry dates. Both have RLS enabled and all browser-role grants revoked. There are intentionally no browser-facing policies. Only the server's service role can access them.
 
-## Posting rules
+The Edge Function gets its server credential from Supabase's runtime environment. The browser uses only the publishable key. CORS permits the owner's GitHub Pages origin and localhost development. CORS is not the access-control boundary; validated sessions and role checks are.
 
-- Receiving approval creates released raw-material inventory only after its recorded checks pass.
-- Planning approval creates a unique batch.
-- Material issue approval checks lot state, expiry, unit and aggregate availability, then deducts stock and records genealogy.
-- NC submission holds the affected batch and its finished goods.
-- NC approval records the chosen disposition; approved rework can be allocated only within its authorized quantity.
-- FG receipt requires all configured batch checks, an approved packing transfer, a permitted quantity and no previous receipt of that transfer.
-- Dispatch approval checks vehicle/hygiene and label results, released unexpired FG inventory, batch holds and aggregate available quantity, then posts customer-linked stock movements.
+## Workflow behavior
 
-## Security and demonstration scope
+The engine validates required fields, role permissions, units, expiration, quantities, batch QC prerequisites, nonconformance holds, stock posting and rework genealogy. Approval and stock effects are saved together in the workspace. Approved posted stock/order records are locked; appropriate records support correction copies preserving earlier history.
 
-Every operational API request requires platform identity. Records and R2 keys are scoped to that identity. Mutating routes check request origin. The state engine validates department permissions on the server. The operations API validates the published demo username and password before selecting a role; an incoming role field cannot override the authenticated demo account. The owner can sign out and log in with another demo account. Demo IDs share one showcase password and the platform owner workspace.
+All nine published demo accounts share one factory workspace. Shared credentials are intended for synthetic demonstrations, not confidential factory information. The account roster/password are source-controlled for the owner's stated demo purpose. No self-registration or user-editable authorization metadata is used.
 
-The demo is designed for exploration, not audited production operation. Expand employee identity, independent approval checks, validated specifications, retention policy, normalized data, backups and load testing before rollout.
+## Hosting and updates
+
+GitHub serves prebuilt `docs/index.html` and its assets from the `main` branch `/docs` folder. Supabase runs `factory-api`; the owner must deploy its generated single-file source through the dashboard. Frontend edits require rebuilding and committing the output. Backend edits require regenerating and redeploying the function.
+
+The legacy Sites server files are retained for reference and are not part of the static frontend dependency graph. Portfolio repositories and hosting settings are outside this project.
